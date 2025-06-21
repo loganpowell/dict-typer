@@ -7,6 +7,76 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
+snapshots['test_snapshots[custom.example1] 1'] = '''from typing import List, Union
+
+from typing_extensions import TypedDict
+
+
+class DataItem0(TypedDict):
+    timestamp: str
+    text: str
+    id: str
+
+
+class Owner(TypedDict):
+    id: str
+
+
+class Comments(TypedDict):
+    data: Union[List[DataItem0], List[Owner]]
+
+
+class Cursors(TypedDict):
+    after: str
+
+
+class Paging(TypedDict):
+    cursors: Cursors
+    next: str
+
+
+class Comments1(TypedDict):
+    data: List[DataItem0]
+    paging: Paging
+
+
+class RootItem0(TypedDict):
+    caption: str
+    comments: Union[Comments, Comments1]
+    comments_count: int
+    id: str
+    ig_id: str
+    is_comment_enabled: bool
+    like_count: int
+    media_type: str
+    media_url: str
+    owner: Owner
+    permalink: str
+    shortcode: str
+    timestamp: str
+    username: str
+
+
+class RootItem1(TypedDict):
+    caption: str
+    children: Comments
+    comments: Union[Comments, Comments1]
+    comments_count: int
+    id: str
+    ig_id: str
+    is_comment_enabled: bool
+    like_count: int
+    media_type: str
+    media_url: str
+    owner: Owner
+    permalink: str
+    shortcode: str
+    timestamp: str
+    username: str
+
+
+Root = List[Union[RootItem0, RootItem1]]'''
+
 snapshots['test_snapshots[json.org.example1] 1'] = '''from typing import List
 
 from typing_extensions import TypedDict
@@ -380,73 +450,3 @@ class RootItem0(TypedDict):
 
 
 Root = List[RootItem0]'''
-
-snapshots['test_snapshots[custom.example1] 1'] = '''from typing import List, Union
-
-from typing_extensions import TypedDict
-
-
-class DataItem0(TypedDict):
-    timestamp: str
-    text: str
-    id: str
-
-
-class Comments(TypedDict):
-    data: Union[List[DataItem01], List[DataItem0]]
-
-
-class Owner(TypedDict):
-    id: str
-
-
-class Cursors(TypedDict):
-    after: str
-
-
-class Paging(TypedDict):
-    cursors: Cursors
-    next: str
-
-
-class Comments1(TypedDict):
-    data: List[DataItem0]
-    paging: Paging
-
-
-class RootItem0(TypedDict):
-    caption: str
-    comments: Union[Comments, Comments1]
-    comments_count: int
-    id: str
-    ig_id: str
-    is_comment_enabled: bool
-    like_count: int
-    media_type: str
-    media_url: str
-    owner: Owner
-    permalink: str
-    shortcode: str
-    timestamp: str
-    username: str
-
-
-class RootItem1(TypedDict):
-    caption: str
-    children: Comments
-    comments: Union[Comments, Comments1]
-    comments_count: int
-    id: str
-    ig_id: str
-    is_comment_enabled: bool
-    like_count: int
-    media_type: str
-    media_url: str
-    owner: Owner
-    permalink: str
-    shortcode: str
-    timestamp: str
-    username: str
-
-
-Root = List[Union[RootItem0, RootItem1]]'''

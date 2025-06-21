@@ -49,7 +49,7 @@ class DefinitionBuilder:
         type_postfix: str = "",
         show_imports: bool = True,
         force_alternative: bool = False,
-        name_map: NameMap = None,
+        name_map: Optional[NameMap] = None,
     ) -> None:
         self.definitions = []
 
@@ -65,11 +65,11 @@ class DefinitionBuilder:
         self.source = source
 
     def _get_name(self, name: str) -> str:
-        """ Return the mapped name if it exist """
+        """Return the mapped name if it exist"""
         return self.name_map.get(name, name)
 
     def _add_definition(self, entry: DictEntry) -> DictEntry:
-        """ Add an entry to the definions.
+        """Add an entry to the definions.
 
         If the entry is a DictEntry and there's an existing entry with the same
         keys, then combine the DictEntries
@@ -77,8 +77,23 @@ class DefinitionBuilder:
         dicts_only = [d for d in self.definitions if isinstance(d, DictEntry)]
         for definition in dicts_only:
             if entry.keys == definition.keys:
-                definition.update_members(entry.members)
-                return definition
+                # Check if both are list item types (contain "Item" followed by digits)
+                entry_is_list_item = 'Item' in entry.name and any(c.isdigit() for c in entry.name.split('Item')[-1])
+                def_is_list_item = 'Item' in definition.name and any(c.isdigit() for c in definition.name.split('Item')[-1])
+                
+                if entry_is_list_item and def_is_list_item:
+                    # Both are list item types - only merge if they have the same semantic base
+                    entry_base = entry.name.split('Item')[0]
+                    def_base = definition.name.split('Item')[0]
+                    if entry_base == def_base:
+                        definition.update_members(entry.members)
+                        return definition
+                else:
+                    # At least one is not a list item type - merge based on structure
+                    definition.update_members(entry.members)
+                    return definition
+            
+            # Handle name collisions by appending a number
             if entry.name == definition.name:
                 idx = 1
                 new_name = f"{entry.name}{idx}"
@@ -87,6 +102,7 @@ class DefinitionBuilder:
                     idx += 1
                     new_name = f"{entry.name}{idx}"
                 entry.name = new_name
+        
         self.definitions.append(entry)
         return entry
 
@@ -138,15 +154,12 @@ class DefinitionBuilder:
             for value in item:
                 item_type = self._get_type(value, key=f"{key}Item{idx}")
                 if isinstance(item_type, DictEntry):
-                    if item_type.members not in (
-                        getattr(t, "members", None) for t in list_item_types
-                    ):
-                        list_item_types.add(item_type)
-                        idx += 1
-                        if isinstance(item_type, DictEntry):
-                            self._add_definition(item_type)
+                    # Add the DictEntry and get the potentially merged result
+                    merged_type = self._add_definition(item_type)
+                    list_item_types.add(merged_type)
                 else:
                     list_item_types.add(item_type)
+                idx += 1
 
             return MemberEntry(sequence_type_name, sub_members=list_item_types)
 
@@ -211,7 +224,7 @@ def get_type_definitions(
     type_postfix: str = "",
     show_imports: bool = True,
     force_alternative: bool = False,
-    name_map: NameMap = None,
+    name_map: NameMap | None = None,
 ) -> str:
     builder = DefinitionBuilder(
         source,

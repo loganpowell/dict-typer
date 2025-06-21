@@ -121,9 +121,9 @@ class DefinitionBuilder:
 
         return entry
 
-    def _convert_dict(self, type_name: str, dct: Dict) -> DictEntry:
+    def _convert_dict(self, type_name: str, dct: Dict, total: bool = True) -> DictEntry:
         entry = DictEntry(
-            self._get_name(type_name), force_alternative=self.force_alternative
+            self._get_name(type_name), force_alternative=self.force_alternative, total=total
         )
         for key, value in dct.items():
             value_type = self._get_type(value, key=key)
@@ -407,12 +407,12 @@ def get_type_definitions(
             
             builders.append(builder)
         
-        # Special handling for empty dict case: return single merged type instead of list union
+        # Special handling for empty dict case: create OptionalRootType and use total=False
         if has_empty_dict:
             # For empty dict case, we want a single merged type, not a list union
             # Use only the non-empty dict(s) as the basis for the type
             if len(non_empty_dicts) == 1:
-                # Single non-empty dict case - build directly and make all fields optional
+                # Single non-empty dict case - build the type normally
                 builder = DefinitionBuilder(
                     non_empty_dicts[0],
                     root_type_name=root_type_name,
@@ -423,18 +423,43 @@ def get_type_definitions(
                 )
                 builder.build_output()
                 
-                # Make all fields in all definitions optional
+                # Set total=False for all nested definitions (not the root)
                 for definition in builder.definitions:
                     if isinstance(definition, DictEntry):
-                        for field_name, field_types in definition.members.items():
-                            none_entry = MemberEntry("None")
-                            field_types.add(none_entry)
+                        if definition.name != root_type_name:
+                            definition.total = False
                 
-                # Clear cached output so it regenerates with the optional fields
+                # Clear cached output so it regenerates with total=False
                 builder._output = None
-                return builder.build_output()
+                output = builder.build_output()
+                
+                # Add OptionalRootType definition
+                optional_line = f"Optional{root_type_name} = Optional[{root_type_name}{type_postfix}]"
+                
+                # Ensure Optional is imported
+                if "from typing import" in output:
+                    # Check if Optional is already imported
+                    if "Optional" not in output.split("\n")[0]:
+                        # Add Optional to existing import
+                        output = output.replace(
+                            "from typing import",
+                            "from typing import Optional,"
+                        )
+                    output += f"\n\n{optional_line}"
+                else:
+                    # Need to add Optional import
+                    if "from typing_extensions import TypedDict" in output:
+                        output = output.replace(
+                            "from typing_extensions import TypedDict",
+                            "from typing import Optional\nfrom typing_extensions import TypedDict"
+                        )
+                    else:
+                        output = f"from typing import Optional\n\n{output}"
+                    output += f"\n\n{optional_line}"
+                
+                return output
             else:
-                # Multiple non-empty dicts - merge them first, then make all fields optional
+                # Multiple non-empty dicts - merge them first
                 non_empty_builders = []
                 for example in non_empty_dicts:
                     builder = DefinitionBuilder(
@@ -451,16 +476,41 @@ def get_type_definitions(
                 # Merge the non-empty builders
                 final_builder = _merge_builders(non_empty_builders, non_empty_dicts[0], root_type_name, type_postfix, show_imports, force_alternative, name_map)
                 
-                # Make all fields optional
+                # Set total=False for all nested definitions (not the root)
                 for definition in final_builder.definitions:
                     if isinstance(definition, DictEntry):
-                        for field_name, field_types in definition.members.items():
-                            none_entry = MemberEntry("None")
-                            field_types.add(none_entry)
+                        if definition.name != root_type_name:
+                            definition.total = False
                 
-                # Clear cached output so it regenerates with the optional fields
+                # Clear cached output so it regenerates with total=False
                 final_builder._output = None
-                return final_builder.build_output()
+                output = final_builder.build_output()
+                
+                # Add OptionalRootType definition
+                optional_line = f"Optional{root_type_name} = Optional[{root_type_name}{type_postfix}]"
+                
+                # Ensure Optional is imported
+                if "from typing import" in output:
+                    # Check if Optional is already imported
+                    if "Optional" not in output.split("\n")[0]:
+                        # Add Optional to existing import
+                        output = output.replace(
+                            "from typing import",
+                            "from typing import Optional,"
+                        )
+                    output += f"\n\n{optional_line}"
+                else:
+                    # Need to add Optional import
+                    if "from typing_extensions import TypedDict" in output:
+                        output = output.replace(
+                            "from typing_extensions import TypedDict",
+                            "from typing import Optional\nfrom typing_extensions import TypedDict"
+                        )
+                    else:
+                        output = f"from typing import Optional\n\n{output}"
+                    output += f"\n\n{optional_line}"
+                
+                return output
         
         # Merge all the type information
         final_builder = _merge_builders(builders, source, root_type_name, type_postfix, show_imports, force_alternative, name_map)

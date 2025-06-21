@@ -108,6 +108,7 @@ class DictEntry:
     members: DictMembers
     indentation: int
     force_alternative: bool
+    total: bool
 
     def __init__(
         self,
@@ -115,6 +116,7 @@ class DictEntry:
         members: Optional[DictMembers] = None,
         indentation: int = 4,
         force_alternative: bool = False,
+        total: bool = True,
     ) -> None:
         if is_valid_name(name):
             self.name = name
@@ -123,6 +125,7 @@ class DictEntry:
         self.members = members or {}
         self.indentation = indentation
         self.force_alternative = force_alternative
+        self.total = total
 
     def get_imports(self) -> Set[str]:
         imports = set()
@@ -174,8 +177,9 @@ class DictEntry:
         out: List[str] = []
 
         if self.force_alternative or self.any_invalid_key():
+            total_param = ", total=False" if not self.total else ""
             if not self.members:
-                out.append(f'{self.name} = TypedDict("{self.name}", {{}}')
+                out.append(f'{self.name} = TypedDict("{self.name}", {{}}{total_param})')
             else:
                 out.append(f'{self.name} = TypedDict("{self.name}", {{')
 
@@ -184,9 +188,10 @@ class DictEntry:
                         f'{" " * self.indentation}"{key}": {sub_members_to_string(value)},'
                     )
 
-                out.append("})")
+                out.append(f"}}{total_param})")  
         else:
-            out.append(f"class {self.name}(TypedDict):")
+            total_param = ", total=False" if not self.total else ""
+            out.append(f"class {self.name}(TypedDict{total_param}):")
             if not self.members:
                 out.append(f'{" " * self.indentation}pass')
             else:

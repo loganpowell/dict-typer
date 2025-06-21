@@ -1,7 +1,7 @@
 import io
 import json
 import sys
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
 import click
 from rich.console import Console
@@ -43,7 +43,7 @@ def cli(
         stream = file[0].read().strip()
 
     try:
-        parsed: Dict = json.loads(stream)
+        parsed = json.loads(stream)
     except json.decoder.JSONDecodeError as e:
         raise click.UsageError(f"JSON serialisation error \n\n{e}")
 

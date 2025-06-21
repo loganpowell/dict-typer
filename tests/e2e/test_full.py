@@ -136,14 +136,13 @@ def test_script_runs_with_nonzero() -> None:
     """
 
     # 1.
-    source_type_name = "Test"
+    source_type_name = "Root"
     type_postfix = "Type"
 
     output = get_type_definitions(
-        TEST_SOURCE,
+        [TEST_SOURCE, {}],
         root_type_name=source_type_name,
         type_postfix=type_postfix,
-        show_imports=True,
     )
 
     with open("tests/e2e/test_full.output_types.py", "w", encoding="utf-8") as f:

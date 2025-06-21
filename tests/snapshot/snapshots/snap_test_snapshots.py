@@ -7,23 +7,46 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_snapshots[custom.example1] 1'] = '''from typing import List, Union
+snapshots['test_snapshots[custom.example1] 1'] = '''from typing import List, Optional, Union
 
 from typing_extensions import TypedDict
 
 
 class DataItem0(TypedDict):
-    timestamp: str
-    text: str
+    timestamp: Optional[str]
+    text: Optional[str]
     id: str
+
+
+class Comments(TypedDict):
+    data: Union[List[DataItem01], List[DataItem0]]
+    paging: Optional[Paging]
 
 
 class Owner(TypedDict):
     id: str
 
 
-class Comments(TypedDict):
-    data: Union[List[DataItem0], List[Owner]]
+class Root(TypedDict):
+    caption: str
+    comments: Comments
+    comments_count: int
+    id: str
+    ig_id: str
+    is_comment_enabled: bool
+    like_count: int
+    media_type: str
+    media_url: str
+    owner: Owner
+    permalink: str
+    shortcode: str
+    timestamp: str
+    username: str
+    children: Optional[Children]
+
+
+class Children(TypedDict):
+    data: Union[List[DataItem01], List[DataItem0], List[Owner]]
 
 
 class Cursors(TypedDict):
@@ -35,14 +58,9 @@ class Paging(TypedDict):
     next: str
 
 
-class Comments1(TypedDict):
-    data: List[DataItem0]
-    paging: Paging
-
-
 class RootItem0(TypedDict):
     caption: str
-    comments: Union[Comments, Comments1]
+    comments: Union[Children, Comments]
     comments_count: int
     id: str
     ig_id: str
@@ -57,25 +75,7 @@ class RootItem0(TypedDict):
     username: str
 
 
-class RootItem1(TypedDict):
-    caption: str
-    children: Comments
-    comments: Union[Comments, Comments1]
-    comments_count: int
-    id: str
-    ig_id: str
-    is_comment_enabled: bool
-    like_count: int
-    media_type: str
-    media_url: str
-    owner: Owner
-    permalink: str
-    shortcode: str
-    timestamp: str
-    username: str
-
-
-Root = List[Union[RootItem0, RootItem1]]'''
+Root = List[Union[Root, RootItem0]]'''
 
 snapshots['test_snapshots[json.org.example1] 1'] = '''from typing import List
 

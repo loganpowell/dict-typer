@@ -28,10 +28,11 @@ def sub_members_to_string(sub_members: SubMembers) -> str:
         optional_member = next(sm for sm in sub_members if sm.name != "None")
         return f"Optional[{get_member_value(optional_member)}]"
     if len(sub_members) > 0:
-        sub_members_strs = sorted(get_member_value(sm) for sm in sub_members)
-        if len(sub_members_strs) == 1:
-            return str(sub_members_strs[0])
-        return f"Union[{', '.join(sub_members_strs)}]"
+        # Remove duplicates by using a set of member values
+        unique_member_strs = sorted(set(get_member_value(sm) for sm in sub_members))
+        if len(unique_member_strs) == 1:
+            return str(unique_member_strs[0])
+        return f"Union[{', '.join(unique_member_strs)}]"
     return ""
 
 
